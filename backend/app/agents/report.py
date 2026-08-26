@@ -10,70 +10,69 @@ def report_node(state: ResearchState):
     locations = state["locations"]
 
     best_location_data = next(
-loc for loc in locations
-if loc["name"] == location
-)
+        loc for loc in locations
+        if loc["name"] == location
+    )
+
 
     prompt = f"""
-You are an AI infrastructure consultant specialized in selecting locations for large-scale AI data centers.
+You are an AI data center analysis report generator.
 
-Analyze the recommended location using ONLY the provided climate data.
+The scoring system already selected the recommended location.
+Your job is ONLY to explain the decision.
 
 Recommended Location:
 {location}
 
 
-Recommended Location Data:
+Selected Location Data:
 {best_location_data}
 
 
-Alternative Locations:
+All Locations:
 {locations}
 
-Generate a concise professional recommendation report for AI data center site selection.
 
+STRICT RULES:
 
-The report must focus on:
+- Do not change the recommendation.
+- Do not suggest alternatives.
+- Use only provided numbers.
+- When comparing scores, always include both values.
+- Never describe a score as risk, comfort, or safety unless explicitly provided.
+- Risk score: treat it only as a positive score. Do not compare it as risk level.- Do not mention comfort, people, tourism, or weather.
+- Do not invent standards or thresholds.
+- Do not use words related to human experience such as comfort, discomfort, safety, or ideal weather.
+- Do not describe climate as good or bad. Only compare infrastructure performance metrics.
+- Use technical infrastructure language only.
 
-- Cooling efficiency
-- Thermal stress impact on data center operations
-- Temperature impact on cooling requirements
-- Climate-related infrastructure risks
-- Comparison with alternative locations
-
-
-Important rules:
-- Use ONLY the provided data.
-- Do not invent climate values.
-- Never call a value average, annual, or typical unless explicitly provided.
-- Do not describe a location as having a "cool climate" unless supported by comparison data.
-- Always compare the recommended location against the alternatives.
-- Focus on relative improvement, cooling demand reduction, and infrastructure efficiency.
-- Do not exaggerate benefits.
+Write a short technical report.
 
 Format:
 
 Recommended Location:
-<location>
+<name>
 
 
-Suitability Assessment:
-<Explain why this location is suitable for an AI data center>
+Suitability Score:
+<number>/100
 
+
+Why Selected:
+Explain why this location achieved a higher suitability score using the provided metrics.
 
 Key Advantages:
-- <advantage based on provided data>
-- <advantage based on provided data>
-- <advantage based on provided data>
+- Compare cooling score
+- Compare thermal score
+- Mention suitability score
 
 
 Conclusion:
-<Final recommendation for AI data center deployment>
+One sentence recommendation for AI data center deployment.
 """
 
 
     report = ask_llm(prompt)
-
 
     return {
         "report": report
