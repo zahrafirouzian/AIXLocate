@@ -3,12 +3,15 @@ from langgraph.graph import StateGraph, START, END
 from app.models.state import ResearchState
 
 from app.agents.planner import planner_node
-from app.agents.location import location_node
+from app.agents.climate import climate_node
 from app.agents.scoring import scoring_node
 from app.agents.report import report_node
 
+
 builder = StateGraph(ResearchState)
 
+
+# Nodes
 
 builder.add_node(
     "planner",
@@ -16,8 +19,8 @@ builder.add_node(
 )
 
 builder.add_node(
-    "location",
-    location_node
+    "climate",
+    climate_node
 )
 
 builder.add_node(
@@ -31,6 +34,8 @@ builder.add_node(
 )
 
 
+# Workflow
+
 builder.add_edge(
     START,
     "planner"
@@ -38,11 +43,11 @@ builder.add_edge(
 
 builder.add_edge(
     "planner",
-    "location"
+    "climate"
 )
 
 builder.add_edge(
-    "location",
+    "climate",
     "scoring"
 )
 

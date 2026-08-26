@@ -13,3 +13,4 @@ result = graph.invoke(
 
 
 print(result["report"])
+print(result["locations"])
