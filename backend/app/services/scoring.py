@@ -1,36 +1,47 @@
 def calculate_cooling_score(temperature):
 
-    score = 100 - abs(temperature - 30) * 5
+    score = 100 - abs(temperature - 25) * 4
 
     return max(0, min(score, 100))
 
 
 
-def calculate_thermal_score(heat_stress):
+def calculate_thermal_score(temperature):
 
-    score = 100 - heat_stress
+    score = 100 - abs(temperature - 25) * 3
 
     return max(0, min(score, 100))
 
 
 
-def calculate_risk_score():
+def calculate_risk_score(solar_ghi):
 
-    return 80
+    score = 100 - (solar_ghi / 20)
+
+    return max(0, min(score, 100))
 
 
 
 def calculate_suitability(location):
 
+    temperature = location["temperature"]
+
+    solar = location["solar_ghi"]
+
+
     cooling = calculate_cooling_score(
-        location["temperature"]
+        temperature
     )
+
 
     thermal = calculate_thermal_score(
-        location["heat_stress"]
+        temperature
     )
 
-    risk = calculate_risk_score()
+
+    risk = calculate_risk_score(
+        solar
+    )
 
 
     total = (
@@ -44,8 +55,12 @@ def calculate_suitability(location):
 
     return {
         **location,
+
         "cooling_score": round(cooling,2),
+
         "thermal_score": round(thermal,2),
-        "risk_score": risk,
+
+        "risk_score": round(risk,2),
+
         "suitability_score": round(total,2)
     }

@@ -1,6 +1,7 @@
 from app.tools.fortyguard_environment import get_environmental_data
 from app.services.climate_normalizer import normalize_climate_data
 
+
 def climate_node(state):
 
     locations = state["locations"]
@@ -10,6 +11,12 @@ def climate_node(state):
 
     for location in locations:
 
+        print(
+            "Requesting FortyGuard:",
+            location["name"]
+        )
+
+
         data = get_environmental_data(
             location["lat"],
             location["lon"],
@@ -17,7 +24,14 @@ def climate_node(state):
         )
 
 
+        print(
+            "FortyGuard completed:",
+            location["name"]
+        )
+
+
         result = data["result"]["locations"][0]
+
 
         normalized = normalize_climate_data(
             {
@@ -32,6 +46,7 @@ def climate_node(state):
 
 
         climate_results.append(normalized)
+
 
     return {
         "locations": climate_results
