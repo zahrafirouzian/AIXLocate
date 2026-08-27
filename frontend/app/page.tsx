@@ -56,8 +56,10 @@ export default function Home() {
       };
 
       const response = await analyzeLocation(data);
-
+      console.log("AIXLocate API Response:", response);
+      console.log("Heatmap:", response.heatmap);
       setResult(response);
+
     } catch (error) {
       console.error("Analysis error:", error);
 
@@ -181,8 +183,8 @@ export default function Home() {
 
           <ClimateMap
             locations={result.locations ?? []}
+            heatmap={result.heatmap}
           />
-
           <ReportCard
             report={
               result.analysis?.report ??

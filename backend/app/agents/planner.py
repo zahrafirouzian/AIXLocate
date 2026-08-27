@@ -1,27 +1,15 @@
 from app.models.state import ResearchState
 
-from app.services.llm import ask_llm
-
 
 def planner_node(state: ResearchState):
 
-    query = state["query"]
+    city = state["city"].strip()
 
+    if not city:
+        raise ValueError("City is required")
 
-    prompt = f"""
-You are a data center location planning assistant.
-
-Extract city and criteria from this request:
-
-{query}
-
-Return only the city name.
-"""
-
-
-    city = ask_llm(prompt)
-
+    print("Planning analysis for:", city)
 
     return {
-        "city": city.strip()
+        "city": city
     }

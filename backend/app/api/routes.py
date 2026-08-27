@@ -19,8 +19,9 @@ def analyze(data: dict):
         )
 
     try:
-
-        locations = generate_candidates(city)
+        locations = generate_candidates(
+            city
+        )
 
     except ValueError as e:
 
@@ -36,11 +37,17 @@ def analyze(data: dict):
                 f"Find the best location for a data center in {city}"
             ),
 
+            "city": city,
+
             "locations": locations,
 
             "recommendation": None,
 
             "report": None,
+
+            "heatmap": None,
+
+            "heatmap_stats": None,
         }
     )
 
@@ -70,11 +77,22 @@ def analyze(data: dict):
             break
 
     return {
+
         "best_location": best_location,
 
         "analysis": {
-            "report": result.get("report")
+            "report": result.get(
+                "report"
+            )
         },
 
-        "locations": analyzed_locations
+        "locations": analyzed_locations,
+
+        "heatmap": result.get(
+            "heatmap"
+        ),
+
+        "heatmap_stats": result.get(
+            "heatmap_stats"
+        ),
     }

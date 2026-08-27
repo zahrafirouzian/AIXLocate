@@ -1,4 +1,4 @@
-from typing import TypedDict, List, Optional
+from typing import TypedDict, List, Optional, Dict, Any
 
 
 class LocationResult(TypedDict):
@@ -21,8 +21,9 @@ class LocationResult(TypedDict):
 
     risk_score: float
 
-    suitability_score: float
+    climate_score: float
 
+    suitability_score: float
 
 
 class ResearchState(TypedDict):
@@ -33,6 +34,10 @@ class ResearchState(TypedDict):
 
     locations: List[LocationResult]
 
-    recommendation: str
+    recommendation: Optional[str]
 
-    report: str
+    report: Optional[str]
+
+    heatmap: Optional[Dict[str, Any]]
+
+    heatmap_stats: Optional[Dict[str, Any]]
