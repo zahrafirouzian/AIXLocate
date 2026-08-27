@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from app.graph.workflow import graph
+from app.services.candidate_generator import generate_candidates
 
 
 router = APIRouter()
@@ -9,24 +10,36 @@ router = APIRouter()
 @router.post("/analyze")
 def analyze(data: dict):
 
-    result = graph.invoke(data)
+    city = data.get(
+        "city",
+        "Phoenix"
+    )
 
+    locations = generate_candidates(
+        city
+    )
 
-    locations = result.get(
+    result = graph.invoke(
+        {
+            "query": data["query"],
+            "locations": locations,
+            "recommendation": None,
+            "report": None,
+        }
+    )
+
+    analyzed_locations = result.get(
         "locations",
         []
     )
-
 
     recommendation = result.get(
         "recommendation"
     )
 
-
     best_location = None
 
-
-    for loc in locations:
+    for loc in analyzed_locations:
 
         if loc["name"] == recommendation:
 
@@ -44,15 +57,11 @@ def analyze(data: dict):
 
             }
 
-
             break
-
-
 
     return {
 
         "best_location": best_location,
-
 
         "analysis": {
 
@@ -62,7 +71,6 @@ def analyze(data: dict):
 
         },
 
-
-        "locations": locations
+        "locations": analyzed_locations
 
     }
