@@ -4,11 +4,11 @@ import time
 
 from dotenv import load_dotenv
 
+
 load_dotenv()
 
 
 class FortyGuardClient:
-
 
     def __init__(self):
 
@@ -18,8 +18,6 @@ class FortyGuardClient:
             "FORTYGUARD_API_KEY"
         )
 
-
-
     def headers(self):
 
         return {
@@ -27,14 +25,11 @@ class FortyGuardClient:
             "Content-Type": "application/json"
         }
 
-
-
     def submit_task(
         self,
         endpoint,
         payload
     ):
-
 
         response = requests.post(
             self.base_url + endpoint,
@@ -43,24 +38,35 @@ class FortyGuardClient:
             timeout=60
         )
 
+        # Show detailed API error
+        # before raise_for_status()
+        if not response.ok:
+
+            print(
+                "FORTYGUARD ERROR STATUS:",
+                response.status_code
+            )
+
+            print(
+                "FORTYGUARD ERROR BODY:",
+                response.text
+            )
 
         response.raise_for_status()
 
-
         data = response.json()
 
-        print("SUBMIT:", data)
-
+        print(
+            "SUBMIT:",
+            data
+        )
 
         return data
-
-
 
     def get_status(
         self,
         activity_id
     ):
-
 
         response = requests.get(
             f"{self.base_url}/status/{activity_id}",
@@ -70,18 +76,13 @@ class FortyGuardClient:
             timeout=30
         )
 
-
         if response.status_code == 503:
 
             return None
 
-
         response.raise_for_status()
 
-
         return response.json()
-
-
 
     def wait_for_result(
         self,
@@ -89,25 +90,19 @@ class FortyGuardClient:
         timeout=300
     ):
 
-
         start = time.time()
-
 
         while True:
 
-
-            if time.time()-start > timeout:
+            if time.time() - start > timeout:
 
                 raise TimeoutError(
                     f"FortyGuard timeout {activity_id}"
                 )
 
-
-
             result = self.get_status(
                 activity_id
             )
-
 
             if result is None:
 
@@ -119,32 +114,24 @@ class FortyGuardClient:
 
                 continue
 
-
-
             data = result.get(
                 "data",
                 {}
             )
-
 
             status = data.get(
                 "status",
                 ""
             ).lower()
 
-
             print(
                 "STATUS:",
                 status
             )
 
-
-
             if status == "completed":
 
                 return data
-
-
 
             if status in [
                 "failed",
@@ -154,6 +141,5 @@ class FortyGuardClient:
                 raise Exception(
                     result
                 )
-
 
             time.sleep(10)

@@ -1,32 +1,41 @@
-def generate_candidates(city: str):
+from typing import List
+from app.services.geocoder import get_city_coordinates
 
-    city = city.lower().strip()
 
-    if city == "phoenix":
+def generate_candidates(city: str) -> List[dict]:
 
-        return [
-            {
-                "name": "North Phoenix",
-                "lat": 33.70,
-                "lon": -112.10,
-                "temperature": 38,
-                "heat_stress": 65,
-            },
-            {
-                "name": "Downtown Phoenix",
-                "lat": 33.44,
-                "lon": -112.07,
-                "temperature": 44,
-                "heat_stress": 85,
-            },
-        ]
+    lat, lon = get_city_coordinates(city)
 
     return [
+
         {
-            "name": city.title(),
-            "lat": 33.70,
-            "lon": -112.10,
-            "temperature": 35,
-            "heat_stress": 60,
+            "name": f"North {city}",
+            "lat": lat + 0.15,
+            "lon": lon,
+        },
+
+        {
+            "name": f"South {city}",
+            "lat": lat - 0.15,
+            "lon": lon,
+        },
+
+        {
+            "name": f"East {city}",
+            "lat": lat,
+            "lon": lon + 0.15,
+        },
+
+        {
+            "name": f"West {city}",
+            "lat": lat,
+            "lon": lon - 0.15,
+        },
+
+        {
+            "name": f"Downtown {city}",
+            "lat": lat,
+            "lon": lon,
         }
+
     ]

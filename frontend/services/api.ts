@@ -1,8 +1,6 @@
 const API_URL = "http://127.0.0.1:8000";
 
-
 export async function analyzeLocation(data: any) {
-
     const response = await fetch(
         `${API_URL}/api/analyze`,
         {
@@ -16,11 +14,21 @@ export async function analyzeLocation(data: any) {
         }
     );
 
-
     if (!response.ok) {
-        throw new Error("API request failed");
-    }
+        let message = "API request failed";
 
+        try {
+            const errorData = await response.json();
+
+            if (errorData?.detail) {
+                message = errorData.detail;
+            }
+        } catch {
+            // Ignore JSON parsing errors
+        }
+
+        throw new Error(message);
+    }
 
     return await response.json();
 }
