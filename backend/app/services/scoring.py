@@ -1,12 +1,14 @@
 def calculate_cooling_score(temperature):
 
-    # Ideal operating temperature for
-    # data-center cooling efficiency.
-    ideal_temperature = 22
+    ideal_temperature = 22.0
 
-    score = 100 - abs(
+    distance = abs(
         temperature - ideal_temperature
-    ) * 4
+    )
+
+    score = 100 - (
+        distance * 4
+    )
 
     return max(
         0,
@@ -16,13 +18,15 @@ def calculate_cooling_score(temperature):
 
 def calculate_thermal_score(temperature):
 
-    # Thermal suitability around the
-    # preferred operating temperature.
-    ideal_temperature = 22
+    ideal_temperature = 22.0
 
-    score = 100 - abs(
+    distance = abs(
         temperature - ideal_temperature
-    ) * 3
+    )
+
+    score = 100 - (
+        distance * 3
+    )
 
     return max(
         0,
@@ -32,12 +36,8 @@ def calculate_thermal_score(temperature):
 
 def calculate_risk_score(solar_ghi):
 
-    # Higher solar irradiance can indicate
-    # higher heat/cooling burden.
-    #
-    # GHI is approximately in W/m².
-    # Scaling by 20 keeps the score in
-    # a useful 0-100 range.
+    # Higher irradiance means higher potential
+    # thermal/solar load on infrastructure.
 
     score = 100 - (
         solar_ghi / 20
@@ -51,13 +51,19 @@ def calculate_risk_score(solar_ghi):
 
 def calculate_suitability(location):
 
-    temperature = location["temperature"]
+    temperature = float(
+        location["temperature"]
+    )
 
-    solar = location["solar_ghi"]
+    solar = float(
+        location["solar_ghi"]
+    )
 
-    climate_score = location.get(
-        "climate_score",
-        0
+    climate_score = float(
+        location.get(
+            "climate_score",
+            0
+        )
     )
 
     cooling = calculate_cooling_score(
@@ -72,18 +78,26 @@ def calculate_suitability(location):
         solar
     )
 
+    # --------------------------------------------------
+    # Environmental performance
+    # --------------------------------------------------
+
     environmental_score = (
-        cooling * 0.4
+        cooling * 0.35
         +
-        thermal * 0.4
+        thermal * 0.35
         +
-        risk * 0.2
+        risk * 0.30
     )
 
+    # --------------------------------------------------
+    # Final suitability
+    # --------------------------------------------------
+
     final_score = (
-        environmental_score * 0.6
+        environmental_score * 0.60
         +
-        climate_score * 0.4
+        climate_score * 0.40
     )
 
     return {

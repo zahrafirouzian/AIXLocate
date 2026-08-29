@@ -18,28 +18,75 @@ class FortyGuardClient:
             "FORTYGUARD_API_KEY"
         )
 
+        if not self.api_key:
+            raise ValueError(
+                "FORTYGUARD_API_KEY is not set"
+            )
+
+    # --------------------------------------------------
+    # Headers
+    # --------------------------------------------------
+
     def headers(self):
 
         return {
             "api-key": self.api_key,
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
         }
+
+    # --------------------------------------------------
+    # Submit task
+    # --------------------------------------------------
 
     def submit_task(
         self,
         endpoint,
-        payload
+        payload,
     ):
 
-        response = requests.post(
-            self.base_url + endpoint,
-            headers=self.headers(),
-            json=payload,
-            timeout=60
+        print(
+            "\n===== FORTYGUARD SUBMIT ====="
         )
 
-        # Show detailed API error
-        # before raise_for_status()
+        print(
+            "Endpoint:",
+            endpoint
+        )
+
+        try:
+
+            response = requests.post(
+                self.base_url + endpoint,
+                headers=self.headers(),
+                json=payload,
+                timeout=60,
+            )
+
+        except requests.exceptions.Timeout:
+
+            print(
+                "\nFORTYGUARD SUBMIT TIMEOUT"
+            )
+
+            raise
+
+        except requests.exceptions.ConnectionError as e:
+
+            print(
+                "\nFORTYGUARD CONNECTION ERROR"
+            )
+
+            print(
+                "Error:",
+                e
+            )
+
+            raise
+
+        # --------------------------------------------------
+        # Detailed API error
+        # --------------------------------------------------
+
         if not response.ok:
 
             print(
@@ -54,92 +101,382 @@ class FortyGuardClient:
 
         response.raise_for_status()
 
-        data = response.json()
+        try:
+
+            data = response.json()
+
+        except ValueError:
+
+            print(
+                "FORTYGUARD INVALID JSON RESPONSE:"
+            )
+
+            print(
+                response.text
+            )
+
+            raise
 
         print(
             "SUBMIT:",
             data
         )
 
+        print(
+            "============================\n"
+        )
+
         return data
+
+    # --------------------------------------------------
+    # Get task status
+    # --------------------------------------------------
 
     def get_status(
         self,
-        activity_id
+        activity_id,
     ):
 
-        response = requests.get(
-            f"{self.base_url}/status/{activity_id}",
-            headers={
-                "api-key": self.api_key
-            },
-            timeout=30
+        url = (
+            f"{self.base_url}/status/"
+            f"{activity_id}"
         )
 
-        if response.status_code == 503:
+        try:
+
+            response = requests.get(
+                url,
+                headers={
+                    "api-key": self.api_key
+                },
+                timeout=60,
+            )
+
+        except requests.exceptions.ReadTimeout:
+
+            print(
+                "\nFORTYGUARD STATUS REQUEST TIMEOUT"
+            )
+
+            print(
+                "Activity:",
+                activity_id
+            )
 
             return None
 
-        response.raise_for_status()
+        except requests.exceptions.ConnectionError as e:
 
-        return response.json()
+            print(
+                "\nFORTYGUARD CONNECTION ERROR"
+            )
+
+            print(
+                "Activity:",
+                activity_id
+            )
+
+            print(
+                "Error:",
+                e
+            )
+
+            return None
+
+        # --------------------------------------------------
+        # Temporary HTTP errors
+        # --------------------------------------------------
+
+        if response.status_code in (
+            502,
+            503,
+            504,
+        ):
+
+            print(
+                "\n===== FORTYGUARD TEMPORARY ERROR ====="
+            )
+
+            print(
+                "Status:",
+                response.status_code
+            )
+
+            print(
+                "Activity:",
+                activity_id
+            )
+
+            print(
+                "Response body:",
+                response.text
+            )
+
+            print(
+                "========================================"
+            )
+
+            return None
+
+        # --------------------------------------------------
+        # Other HTTP errors
+        # --------------------------------------------------
+
+        if not response.ok:
+
+            print(
+                "\n===== FORTYGUARD STATUS ERROR ====="
+            )
+
+            print(
+                "Status:",
+                response.status_code
+            )
+
+            print(
+                "Activity:",
+                activity_id
+            )
+
+            print(
+                "Response body:",
+                response.text
+            )
+
+            print(
+                "===================================="
+            )
+
+            response.raise_for_status()
+
+        # --------------------------------------------------
+        # Parse JSON
+        # --------------------------------------------------
+
+        try:
+
+            return response.json()
+
+        except ValueError:
+
+            print(
+                "\nFORTYGUARD INVALID STATUS JSON"
+            )
+
+            print(
+                "HTTP status:",
+                response.status_code
+            )
+
+            print(
+                "Response:",
+                response.text
+            )
+
+            return None
+
+    # --------------------------------------------------
+    # Wait for task result
+    # --------------------------------------------------
 
     def wait_for_result(
         self,
         activity_id,
-        timeout=300
+        timeout=600,
+        poll_interval=5,
     ):
+
+        print(
+            "\n===== WAITING FOR FORTYGUARD ====="
+        )
+
+        print(
+            "Activity ID:",
+            activity_id
+        )
+
+        print(
+            "Maximum wait:",
+            timeout,
+            "seconds"
+        )
+
+        print(
+            "Poll interval:",
+            poll_interval,
+            "seconds"
+        )
+
+        print(
+            "==================================\n"
+        )
 
         start = time.time()
 
         while True:
 
-            if time.time() - start > timeout:
+            elapsed = (
+                time.time()
+                - start
+            )
+
+            # --------------------------------------------------
+            # Overall timeout
+            # --------------------------------------------------
+
+            if elapsed >= timeout:
 
                 raise TimeoutError(
-                    f"FortyGuard timeout {activity_id}"
+                    "FortyGuard task timeout: "
+                    f"{activity_id}"
                 )
+
+            # --------------------------------------------------
+            # Request status
+            # --------------------------------------------------
 
             result = self.get_status(
                 activity_id
             )
 
+            # --------------------------------------------------
+            # Temporary request failure
+            # --------------------------------------------------
+
             if result is None:
 
                 print(
-                    "503 retry..."
+                    "Status unavailable."
                 )
 
-                time.sleep(10)
+                print(
+                    f"Retrying in {poll_interval} seconds..."
+                )
+
+                time.sleep(
+                    poll_interval
+                )
 
                 continue
+
+            # --------------------------------------------------
+            # API-level error
+            # --------------------------------------------------
+
+            if result.get("error"):
+
+                print(
+                    "\n===== FORTYGUARD API ERROR ====="
+                )
+
+                print(
+                    result
+                )
+
+                print(
+                    "=================================\n"
+                )
+
+                raise Exception(
+                    "FortyGuard status API returned "
+                    f"an error: {result}"
+                )
+
+            # --------------------------------------------------
+            # Extract data
+            # --------------------------------------------------
 
             data = result.get(
                 "data",
                 {}
             )
 
-            status = data.get(
-                "status",
-                ""
+            status = str(
+                data.get(
+                    "status",
+                    ""
+                )
             ).lower()
 
             print(
                 "STATUS:",
-                status
+                status,
+                "| ELAPSED:",
+                round(elapsed),
+                "seconds"
             )
 
-            if status == "completed":
+            # --------------------------------------------------
+            # Completed
+            # --------------------------------------------------
+
+            if status in (
+                "completed",
+                "succeeded",
+                "success",
+            ):
+
+                print(
+                    "\n===== FORTYGUARD COMPLETED ====="
+                )
+
+                print(
+                    "Activity:",
+                    activity_id
+                )
+
+                print(
+                    "Elapsed:",
+                    round(elapsed),
+                    "seconds"
+                )
+
+                print(
+                    "================================\n"
+                )
 
                 return data
 
-            if status in [
-                "failed",
-                "error"
-            ]:
+            # --------------------------------------------------
+            # Failed
+            # --------------------------------------------------
 
-                raise Exception(
+            if status in (
+                "failed",
+                "error",
+            ):
+
+                print(
+                    "\n===== FORTYGUARD TASK FAILED ====="
+                )
+
+                print(
+                    "Activity:",
+                    activity_id
+                )
+
+                print(
+                    "Result:",
                     result
                 )
 
-            time.sleep(10)
+                print(
+                    "==================================\n"
+                )
+
+                raise Exception(
+                    "FortyGuard task failed: "
+                    f"{result}"
+                )
+
+            # --------------------------------------------------
+            # Still processing
+            # --------------------------------------------------
+
+            print(
+                "Task still processing..."
+            )
+
+            time.sleep(
+                poll_interval
+            )

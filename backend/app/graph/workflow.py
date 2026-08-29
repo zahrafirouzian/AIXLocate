@@ -8,10 +8,16 @@ from app.agents.scoring import scoring_node
 from app.agents.report import report_node
 
 
+# ==================================================
+# Build Research Workflow
+# ==================================================
+
 builder = StateGraph(ResearchState)
 
 
+# ==================================================
 # Nodes
+# ==================================================
 
 builder.add_node(
     "planner",
@@ -34,7 +40,9 @@ builder.add_node(
 )
 
 
+# ==================================================
 # Workflow
+# ==================================================
 
 builder.add_edge(
     START,
@@ -61,5 +69,9 @@ builder.add_edge(
     END
 )
 
+
+# ==================================================
+# Compile
+# ==================================================
 
 graph = builder.compile()

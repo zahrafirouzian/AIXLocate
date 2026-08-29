@@ -1,4 +1,4 @@
-from math import sqrt
+from math import cos, radians
 
 from app.tools.fortyguard_environment import (
     get_environmental_data
@@ -25,17 +25,17 @@ from app.services.climate_score import (
 )
 
 
-# --------------------------------------------------
-# FortyGuard analysis time
-# --------------------------------------------------
+# ==================================================
+# FortyGuard analysis configuration
+# ==================================================
 
 ANALYSIS_DATE = "2024-07-15"
 ANALYSIS_TIME = "14:00"
 
 
-# --------------------------------------------------
+# ==================================================
 # Extract temperature from Heatmap feature
-# --------------------------------------------------
+# ==================================================
 
 def extract_feature_temperature(feature):
 
@@ -57,11 +57,17 @@ def extract_feature_temperature(feature):
 
         value = properties.get(key)
 
-        if isinstance(value, (int, float)):
+        if isinstance(
+            value,
+            (int, float)
+        ):
 
             return float(value)
 
-        if isinstance(value, list) and value:
+        if (
+            isinstance(value, list)
+            and value
+        ):
 
             first_value = value[0]
 
@@ -75,33 +81,31 @@ def extract_feature_temperature(feature):
     return None
 
 
-# --------------------------------------------------
-# Get approximate center of Heatmap feature
-# --------------------------------------------------
+# ==================================================
+# Extract all coordinate pairs
+# ==================================================
 
-def get_feature_center(feature):
-
-    geometry = feature.get(
-        "geometry",
-        {}
-    )
-
-    coordinates = geometry.get(
-        "coordinates"
-    )
-
-    if not coordinates:
-        return None
+def collect_geometry_points(
+    coordinates
+):
 
     points = []
 
-    def collect_points(value):
+    def collect(value):
 
+        # GeoJSON coordinate:
+        # [longitude, latitude]
         if (
-            isinstance(value, (list, tuple))
+            isinstance(
+                value,
+                (list, tuple)
+            )
             and len(value) == 2
             and all(
-                isinstance(x, (int, float))
+                isinstance(
+                    x,
+                    (int, float)
+                )
                 for x in value
             )
         ):
@@ -122,29 +126,112 @@ def get_feature_center(feature):
 
             for item in value:
 
-                collect_points(item)
+                collect(item)
 
-    collect_points(coordinates)
+    collect(coordinates)
+
+    return points
+
+
+# ==================================================
+# Get approximate Heatmap feature center
+# ==================================================
+
+def get_feature_center(
+    feature
+):
+
+    geometry = feature.get(
+        "geometry",
+        {}
+    )
+
+    coordinates = geometry.get(
+        "coordinates"
+    )
+
+    if not coordinates:
+        return None
+
+    points = collect_geometry_points(
+        coordinates
+    )
 
     if not points:
         return None
 
-    avg_lon = sum(
-        point[0]
-        for point in points
-    ) / len(points)
+    avg_lon = (
+        sum(
+            point[0]
+            for point in points
+        )
+        / len(points)
+    )
 
-    avg_lat = sum(
-        point[1]
-        for point in points
-    ) / len(points)
+    avg_lat = (
+        sum(
+            point[1]
+            for point in points
+        )
+        / len(points)
+    )
 
-    return avg_lat, avg_lon
+    return (
+        avg_lat,
+        avg_lon
+    )
 
 
-# --------------------------------------------------
+# ==================================================
+# Geographic distance in meters
+# ==================================================
+
+def geographic_distance_meters(
+    lat1,
+    lon1,
+    lat2,
+    lon2
+):
+
+    meters_per_degree_lat = 111_000
+
+    meters_per_degree_lon = (
+        111_000
+        * cos(
+            radians(
+                (lat1 + lat2) / 2
+            )
+        )
+    )
+
+    delta_lat = (
+        lat1 - lat2
+    )
+
+    delta_lon = (
+        lon1 - lon2
+    )
+
+    north_south = (
+        delta_lat
+        * meters_per_degree_lat
+    )
+
+    east_west = (
+        delta_lon
+        * meters_per_degree_lon
+    )
+
+    return (
+        north_south ** 2
+        +
+        east_west ** 2
+    ) ** 0.5
+
+
+# ==================================================
 # Find nearest Heatmap temperature
-# --------------------------------------------------
+# ==================================================
 
 def find_nearest_temperature(
     location,
@@ -153,7 +240,11 @@ def find_nearest_temperature(
 
     best_temperature = None
 
-    best_distance = float("inf")
+    best_distance = float(
+        "inf"
+    )
+
+    best_center = None
 
     for feature in features:
 
@@ -163,45 +254,106 @@ def find_nearest_temperature(
             )
         )
 
+        if temperature is None:
+            continue
+
         center = get_feature_center(
             feature
         )
 
-        if (
-            temperature is None
-            or center is None
-        ):
-
+        if center is None:
             continue
 
-        feature_lat, feature_lon = center
+        feature_lat, feature_lon = (
+            center
+        )
 
-        distance = sqrt(
-            (
-                feature_lat
-                - location["lat"]
-            ) ** 2
-            +
-            (
+        distance = (
+            geographic_distance_meters(
+                location["lat"],
+                location["lon"],
+                feature_lat,
                 feature_lon
-                - location["lon"]
-            ) ** 2
+            )
         )
 
         if distance < best_distance:
 
             best_distance = distance
 
-            best_temperature = temperature
+            best_temperature = (
+                temperature
+            )
+
+            best_center = center
+
+    # ==================================================
+    # Debug spatial matching
+    # ==================================================
+
+    if best_temperature is not None:
+
+        print(
+            "\n===== HEATMAP SPATIAL MATCH ====="
+        )
+
+        print(
+            "Candidate:",
+            location["name"]
+        )
+
+        print(
+            "Candidate coordinates:",
+            round(
+                location["lat"],
+                6
+            ),
+            round(
+                location["lon"],
+                6
+            )
+        )
+
+        print(
+            "Matched Heatmap cell:",
+            round(
+                best_center[0],
+                6
+            ),
+            round(
+                best_center[1],
+                6
+            )
+        )
+
+        print(
+            "Distance:",
+            round(
+                best_distance,
+                2
+            ),
+            "meters"
+        )
+
+        print(
+            "Temperature:",
+            best_temperature
+        )
+
+        print(
+            "=================================\n"
+        )
 
     return best_temperature
 
 
-# --------------------------------------------------
+# ==================================================
 # Climate Node
-# --------------------------------------------------
+# ==================================================
 
-def climate_node(state):
+def climate_node(
+    state
+):
 
     locations = state["locations"]
 
@@ -214,7 +366,7 @@ def climate_node(state):
     # ==================================================
 
     print(
-        "Getting city boundary:",
+        "\nGetting city boundary:",
         city
     )
 
@@ -227,21 +379,21 @@ def climate_node(state):
     # ==================================================
 
     print(
-        "Creating Heatmap AOI:",
+        "\nCreating Heatmap AOI:",
         city
     )
 
     aoi = create_heatmap_aoi(
         boundary,
-        size_km=1.5
+        padding_km=0.5
     )
 
     # ==================================================
-    # 3. Request Heatmap
+    # 3. Request FortyGuard Heatmap
     # ==================================================
 
     print(
-        "Requesting FortyGuard Heatmap:",
+        "\nRequesting FortyGuard Heatmap:",
         city
     )
 
@@ -256,11 +408,13 @@ def climate_node(state):
             },
 
             "granularity": 100,
+
+            "analytic_type": "tcm",
         }
     )
 
     print(
-        "FortyGuard Heatmap completed:",
+        "\nFortyGuard Heatmap completed:",
         city
     )
 
@@ -289,7 +443,7 @@ def climate_node(state):
     )
 
     print(
-        "Heatmap features:",
+        "\nHeatmap features:",
         len(features)
     )
 
@@ -306,36 +460,7 @@ def climate_node(state):
     )
 
     print(
-        "TYPE:",
-        type(stats_data)
-    )
-
-    print(
         "================================\n"
-    )
-
-    # ==================================================
-    # Debug first Heatmap feature
-    # ==================================================
-
-    print(
-        "\n===== FIRST HEATMAP FEATURE ====="
-    )
-
-    if features:
-
-        print(
-            features[0]
-        )
-
-    else:
-
-        print(
-            "NO HEATMAP FEATURES"
-        )
-
-    print(
-        "=================================\n"
     )
 
     # ==================================================
@@ -404,19 +529,33 @@ def climate_node(state):
     )
 
     # ==================================================
-    # 7. Environment analysis
+    # 7. Analyze every candidate
     # ==================================================
 
     for location in locations:
 
         print(
-            "\nRequesting FortyGuard:",
+            "\n======================================"
+        )
+
+        print(
+            "Analyzing:",
             location["name"]
         )
 
-        # --------------------------------------------------
-        # Find actual local temperature from Heatmap
-        # --------------------------------------------------
+        print(
+            "Coordinates:",
+            location["lat"],
+            location["lon"]
+        )
+
+        print(
+            "======================================"
+        )
+
+        # ==================================================
+        # Candidate -> nearest Heatmap cell
+        # ==================================================
 
         heatmap_temperature = (
             find_nearest_temperature(
@@ -425,14 +564,9 @@ def climate_node(state):
             )
         )
 
-        print(
-            "Heatmap temperature:",
-            heatmap_temperature
-        )
-
-        # --------------------------------------------------
+        # ==================================================
         # Fallback to city mean
-        # --------------------------------------------------
+        # ==================================================
 
         if heatmap_temperature is None:
 
@@ -449,13 +583,21 @@ def climate_node(state):
             )
 
             print(
-                "Using Heatmap mean temperature:",
+                "WARNING: No Heatmap cell matched."
+            )
+
+            print(
+                "Using city mean:",
                 heatmap_temperature
             )
 
-        # --------------------------------------------------
-        # Environment API
-        # --------------------------------------------------
+        # ==================================================
+        # FortyGuard Environment API
+        # ==================================================
+
+        print(
+            "Requesting FortyGuard environment:"
+        )
 
         data = get_environmental_data(
             lat=location["lat"],
@@ -466,38 +608,6 @@ def climate_node(state):
         print(
             "FortyGuard completed:",
             location["name"]
-        )
-
-        # ==================================================
-        # Raw response
-        # ==================================================
-
-        print(
-            "\n===== RAW ENVIRONMENT RESPONSE ====="
-        )
-
-        print(
-            "LOCATION:",
-            location["name"]
-        )
-
-        print(
-            "LAT:",
-            location["lat"]
-        )
-
-        print(
-            "LON:",
-            location["lon"]
-        )
-
-        print(
-            "DATA:",
-            data
-        )
-
-        print(
-            "====================================\n"
         )
 
         # ==================================================
@@ -523,9 +633,9 @@ def climate_node(state):
                 f"{data}"
             ) from exc
 
-        # --------------------------------------------------
+        # ==================================================
         # Solar data
-        # --------------------------------------------------
+        # ==================================================
 
         solar_irradiance = (
             result.get(
@@ -552,10 +662,10 @@ def climate_node(state):
         )
 
         # ==================================================
-        # Use Heatmap temperature
+        # Actual local temperature
         # ==================================================
 
-        actual_temperature = (
+        actual_temperature = float(
             heatmap_temperature
         )
 
@@ -570,6 +680,16 @@ def climate_node(state):
         print(
             "NAME:",
             location["name"]
+        )
+
+        print(
+            "LAT:",
+            location["lat"]
+        )
+
+        print(
+            "LON:",
+            location["lon"]
         )
 
         print(
@@ -602,22 +722,28 @@ def climate_node(state):
         # Normalize
         # ==================================================
 
-        normalized = normalize_climate_data(
-            {
-                "name": location["name"],
+        normalized = (
+            normalize_climate_data(
+                {
+                    "name": location["name"],
 
-                "lat": location["lat"],
+                    "lat": location["lat"],
 
-                "lon": location["lon"],
+                    "lon": location["lon"],
 
-                "temperature": actual_temperature,
+                    "temperature": (
+                        actual_temperature
+                    ),
 
-                "solar_ghi": solar_ghi,
+                    "solar_ghi": solar_ghi,
 
-                "solar_dni": solar_dni,
+                    "solar_dni": solar_dni,
 
-                "climate_score": climate_score,
-            }
+                    "climate_score": (
+                        climate_score
+                    ),
+                }
+            )
         )
 
         print(
@@ -648,17 +774,21 @@ def climate_node(state):
 
         "heatmap_stats": stats_data,
 
-        # Useful for frontend / report
         "analyzed_locations": len(
             climate_results
         ),
 
         "analysis_metadata": {
+
             "city": city,
 
-            "analysis_date": ANALYSIS_DATE,
+            "analysis_date": (
+                ANALYSIS_DATE
+            ),
 
-            "analysis_time": ANALYSIS_TIME,
+            "analysis_time": (
+                ANALYSIS_TIME
+            ),
 
             "heatmap_features": len(
                 features
@@ -669,12 +799,18 @@ def climate_node(state):
             ),
 
             "temperature_range": {
-                "minimum": minimum_temperature,
 
-                "mean": mean_temperature,
+                "minimum": (
+                    minimum_temperature
+                ),
 
-                "maximum": maximum_temperature,
+                "mean": (
+                    mean_temperature
+                ),
+
+                "maximum": (
+                    maximum_temperature
+                ),
             },
         },
-
     }

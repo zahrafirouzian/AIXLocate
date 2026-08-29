@@ -131,6 +131,7 @@ export default function Home() {
           </nav>
 
           <div className="mt-10 rounded-2xl bg-gray-50 p-4">
+
           </div>
 
         </aside>

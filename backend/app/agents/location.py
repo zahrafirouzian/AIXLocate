@@ -12,23 +12,35 @@ from app.services.city_boundary import (
 )
 
 
-# --------------------------------------------------
+# ==================================================
 # Candidate configuration
-# --------------------------------------------------
+# ==================================================
 
 TARGET_CANDIDATES = 5
 
-GRID_SIZE = 9
+# Dense grid used to generate possible locations.
+# A larger grid gives the diversity algorithm
+# more choices when selecting spatially separated
+# candidates.
+GRID_SIZE = 15
 
 
-# --------------------------------------------------
-# Distance between two geographic points
-# --------------------------------------------------
+# ==================================================
+# Geographic distance
+# ==================================================
 
 def geographic_distance(
     point_a,
     point_b
 ):
+    """
+    Approximate geographic distance between two
+    latitude/longitude points.
+
+    Since all candidates belong to the same city,
+    this relative distance is sufficient for
+    spatial diversification.
+    """
 
     lat1, lon1 = point_a
     lat2, lon2 = point_b
@@ -40,13 +52,18 @@ def geographic_distance(
     )
 
 
-# --------------------------------------------------
+# ==================================================
 # Generate candidate grid inside city boundary
-# --------------------------------------------------
+# ==================================================
 
 def generate_candidate_pool(
     city_polygon
 ):
+    """
+    Generate a dense grid of possible candidate
+    locations and keep only points inside the
+    actual city boundary.
+    """
 
     min_lon, min_lat, max_lon, max_lat = (
         city_polygon.bounds
@@ -83,55 +100,92 @@ def generate_candidate_pool(
                 lat
             )
 
-            # Only points covered by the
-            # actual city polygon.
+            # Only keep points that are actually
+            # covered by the city polygon.
             if city_polygon.covers(point):
 
                 candidates.append(
                     {
                         "lat": lat,
-                        "lon": lon,
+                        "lon": lon
                     }
                 )
 
     return candidates
 
 
-# --------------------------------------------------
+# ==================================================
 # Select spatially diverse candidates
-# --------------------------------------------------
+# ==================================================
 
 def select_diverse_candidates(
     candidates,
+    city_polygon,
     target_count=TARGET_CANDIDATES
 ):
+    """
+    Select geographically separated candidates.
+
+    Strategy:
+
+    1. Start near the representative point of
+       the city polygon.
+    2. Repeatedly select the candidate whose
+       minimum distance from all selected points
+       is largest.
+
+    This creates a spatially diverse set instead
+    of simply selecting adjacent grid points.
+    """
 
     if not candidates:
+
         return []
 
     # --------------------------------------------------
-    # First point:
-    # representative point guaranteed to be
-    # inside the polygon.
-    #
-    # We select the closest grid candidate to it.
+    # Find a reliable point inside the city.
     # --------------------------------------------------
 
-    # Candidates are already spatially distributed.
-    #
-    # Start with the first candidate, then use a
-    # greedy max-distance strategy.
+    representative = (
+        city_polygon.representative_point()
+    )
+
+    city_center = (
+        representative.y,
+        representative.x
+    )
+
     # --------------------------------------------------
+    # First candidate:
+    # closest available grid point to the
+    # representative point.
+    # --------------------------------------------------
+
+    first_candidate = min(
+        candidates,
+        key=lambda candidate:
+            geographic_distance(
+                (
+                    candidate["lat"],
+                    candidate["lon"]
+                ),
+                city_center
+            )
+    )
 
     selected = [
-        candidates[0]
+        first_candidate
     ]
 
     remaining = [
         candidate
         for candidate in candidates
-        if candidate is not candidates[0]
+        if candidate != first_candidate
     ]
+
+    # --------------------------------------------------
+    # Greedy max-min diversification.
+    # --------------------------------------------------
 
     while (
         len(selected) < target_count
@@ -149,6 +203,8 @@ def select_diverse_candidates(
                 candidate["lon"]
             )
 
+            # Distance to the nearest already
+            # selected candidate.
             min_distance = min(
                 geographic_distance(
                     candidate_point,
@@ -160,7 +216,11 @@ def select_diverse_candidates(
                 for selected_point in selected
             )
 
-            if min_distance > best_min_distance:
+            if (
+                min_distance
+                >
+                best_min_distance
+            ):
 
                 best_min_distance = (
                     min_distance
@@ -169,6 +229,7 @@ def select_diverse_candidates(
                 best_candidate = candidate
 
         if best_candidate is None:
+
             break
 
         selected.append(
@@ -182,14 +243,22 @@ def select_diverse_candidates(
     return selected
 
 
-# --------------------------------------------------
+# ==================================================
 # Determine relative area name
-# --------------------------------------------------
+# ==================================================
 
 def get_area_name(
     candidate,
     city_polygon
 ):
+    """
+    Give each candidate a human-readable relative
+    geographic name such as North, South, East,
+    West or Central.
+
+    The name is descriptive only and does not
+    affect scoring.
+    """
 
     representative = (
         city_polygon.representative_point()
@@ -200,34 +269,40 @@ def get_area_name(
 
     lat_difference = (
         candidate["lat"]
-        - center_lat
+        -
+        center_lat
     )
 
     lon_difference = (
         candidate["lon"]
-        - center_lon
+        -
+        center_lon
     )
 
     lat_range = max(
         city_polygon.bounds[3]
-        - city_polygon.bounds[1],
+        -
+        city_polygon.bounds[1],
         0.000001
     )
 
     lon_range = max(
         city_polygon.bounds[2]
-        - city_polygon.bounds[0],
+        -
+        city_polygon.bounds[0],
         0.000001
     )
 
     lat_ratio = (
         lat_difference
-        / lat_range
+        /
+        lat_range
     )
 
     lon_ratio = (
         lon_difference
-        / lon_range
+        /
+        lon_range
     )
 
     # --------------------------------------------------
@@ -235,8 +310,9 @@ def get_area_name(
     # --------------------------------------------------
 
     if (
-        abs(lat_ratio) < 0.15
-        and abs(lon_ratio) < 0.15
+        abs(lat_ratio) < 0.18
+        and
+        abs(lon_ratio) < 0.18
     ):
 
         return "Central"
@@ -245,27 +321,52 @@ def get_area_name(
     # Dominant direction
     # --------------------------------------------------
 
-    if abs(lat_ratio) >= abs(lon_ratio):
+    if (
+        abs(lat_ratio)
+        >=
+        abs(lon_ratio)
+    ):
 
         if lat_ratio > 0:
+
             return "North"
 
         return "South"
 
     if lon_ratio > 0:
+
         return "East"
 
     return "West"
 
 
-# --------------------------------------------------
+# ==================================================
 # Generate candidates
-# --------------------------------------------------
+# ==================================================
 
-def generate_candidates(city):
+def generate_candidates(
+    city
+):
+    """
+    Generate five geographically diverse candidate
+    locations inside the actual city boundary.
+    """
 
     print(
-        "\nGetting city boundary for:",
+        "\n===== GENERATING SPATIAL CANDIDATES ====="
+    )
+
+    print(
+        "City:",
+        city
+    )
+
+    # --------------------------------------------------
+    # Get actual city boundary
+    # --------------------------------------------------
+
+    print(
+        "Getting city boundary for:",
         city
     )
 
@@ -277,7 +378,9 @@ def generate_candidates(city):
         boundary["features"][0]
     )
 
-    geometry = feature["geometry"]
+    geometry = (
+        feature["geometry"]
+    )
 
     city_polygon = shape(
         geometry
@@ -290,7 +393,7 @@ def generate_candidates(city):
         )
 
     # --------------------------------------------------
-    # Generate many possible points
+    # Generate dense candidate pool
     # --------------------------------------------------
 
     candidate_pool = (
@@ -312,17 +415,22 @@ def generate_candidates(city):
         )
 
     # --------------------------------------------------
-    # Select spatially diverse points
+    # Select spatially diverse locations
     # --------------------------------------------------
 
     selected = (
         select_diverse_candidates(
-            candidate_pool,
-            TARGET_CANDIDATES
+            candidates=candidate_pool,
+            city_polygon=city_polygon,
+            target_count=TARGET_CANDIDATES
         )
     )
 
-    if len(selected) < TARGET_CANDIDATES:
+    if (
+        len(selected)
+        <
+        TARGET_CANDIDATES
+    ):
 
         raise ValueError(
             f"Could only generate "
@@ -331,7 +439,7 @@ def generate_candidates(city):
         )
 
     # --------------------------------------------------
-    # Add names
+    # Create named locations
     # --------------------------------------------------
 
     locations = []
@@ -347,7 +455,7 @@ def generate_candidates(city):
             city_polygon
         )
 
-        # Avoid duplicate area labels.
+        # Prevent duplicate directional labels.
         if area_name in used_names:
 
             area_name = (
@@ -364,34 +472,32 @@ def generate_candidates(city):
                     f"{area_name} {city}"
                 ),
 
-                "lat": candidate["lat"],
+                "lat": round(
+                    candidate["lat"],
+                    6
+                ),
 
-                "lon": candidate["lon"],
+                "lon": round(
+                    candidate["lon"],
+                    6
+                )
             }
         )
 
     # --------------------------------------------------
-    # Debug
+    # Debug output
     # --------------------------------------------------
 
     print(
-        "\n===== SPATIALLY DISTRIBUTED CANDIDATES ====="
+        "\n===== SELECTED SPATIAL CANDIDATES ====="
     )
 
     for location in locations:
 
         print(
-            location["name"],
-            "| LAT:",
-            round(
-                location["lat"],
-                6
-            ),
-            "| LON:",
-            round(
-                location["lon"],
-                6
-            )
+            f"{location['name']} | "
+            f"LAT: {location['lat']} | "
+            f"LON: {location['lon']}"
         )
 
     print(
@@ -400,29 +506,50 @@ def generate_candidates(city):
     )
 
     print(
-        "=============================================\n"
+        "========================================\n"
     )
 
     return locations
 
 
-# --------------------------------------------------
+# ==================================================
 # Location Node
-# --------------------------------------------------
+# ==================================================
 
 def location_node(
     state: ResearchState
 ):
+    """
+    Location node.
 
-    city = state["city"]
+    Candidate generation is handled by the same
+    spatial candidate generator used by the API.
+    """
 
-    print(
-        "\nGenerating spatial candidates for:",
-        city
+    locations = state.get(
+        "locations",
+        []
     )
 
-    locations = generate_candidates(
-        city
+    print(
+        "\n===== LOCATION NODE ====="
+    )
+
+    print(
+        "Candidates received:",
+        len(locations)
+    )
+
+    for location in locations:
+
+        print(
+            f"{location['name']} | "
+            f"LAT: {location['lat']} | "
+            f"LON: {location['lon']}"
+        )
+
+    print(
+        "=========================\n"
     )
 
     return {
