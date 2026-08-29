@@ -1,120 +1,150 @@
 "use client";
 
+export default function RankingBar({
+  locations,
+}: {
+  locations: any[];
+}) {
+  const sortedLocations = [...locations].sort(
+    (a, b) =>
+      Number(b.suitability_score ?? 0) -
+      Number(a.suitability_score ?? 0)
+  );
 
-export default function RankingBar(
-
-    {
-        locations
-    }:
-    {
-        locations:any[]
+  function getAssessment(score: number) {
+    if (score >= 80) {
+      return "Strong";
     }
 
-){
+    if (score >= 60) {
+      return "Moderate";
+    }
 
+    return "Low";
+  }
 
-    return (
+  function getStatusColor(score: number) {
+    if (score >= 80) {
+      return "bg-green-500";
+    }
 
-        <div className="mt-8 rounded-xl border p-6">
+    if (score >= 60) {
+      return "bg-yellow-500";
+    }
 
+    return "bg-red-500";
+  }
 
-            <h2 className="text-2xl font-bold mb-5">
+  function getStatusTextColor(score: number) {
+    if (score >= 80) {
+      return "text-green-700";
+    }
 
-                Location Ranking
+    if (score >= 60) {
+      return "text-yellow-700";
+    }
 
-            </h2>
+    return "text-red-700";
+  }
 
+  return (
+    <div className="mt-8 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
 
+      <div className="mb-5">
 
-            <div className="space-y-5">
+        <h2 className="text-xl font-bold text-gray-900">
+          Location Ranking
+        </h2>
 
+        <p className="mt-1 text-sm text-gray-500">
+          Climate suitability comparison
+        </p>
 
-                {
+      </div>
 
-                    locations
+      <div className="space-y-5">
 
-                    .sort(
+        {sortedLocations.map(
+          (location, index) => {
+            const score = Number(
+              location.suitability_score ?? 0
+            );
 
-                        (a,b)=>
+            const assessment =
+              getAssessment(score);
 
-                        b.suitability_score -
+            return (
+              <div
+                key={location.name}
+                className="rounded-xl border border-gray-100 p-4"
+              >
 
-                        a.suitability_score
+                {/* LOCATION HEADER */}
+                <div className="mb-2 flex items-center justify-between gap-4">
 
-                    )
+                  <div className="flex items-center gap-3">
 
-                    .map(
+                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-gray-100 text-xs font-bold text-gray-700">
+                      {index + 1}
+                    </span>
 
-                        (location,index)=>(
+                    <span className="font-semibold text-gray-900">
+                      {location.name}
+                    </span>
 
+                  </div>
 
-                            <div key={location.name}>
+                  <div className="text-right">
 
+                    <span className="font-bold text-gray-900">
+                      {score.toFixed(2)}
+                    </span>
 
-                                <div className="flex justify-between mb-2">
+                    <span className="text-gray-400">
+                      /100
+                    </span>
 
+                  </div>
 
-                                    <span className="font-semibold">
+                </div>
 
-                                        {index+1}.
+                {/* SCORE BAR */}
+                <div className="h-3 overflow-hidden rounded-full bg-gray-200">
 
-                                        {" "}
-
-                                        {location.name}
-
-                                    </span>
-
-
-
-                                    <span>
-
-                                        {location.suitability_score}/100
-
-                                    </span>
-
-
-                                </div>
-
-
-
-
-
-                                <div className="h-4 rounded bg-gray-200">
-
-
-                                    <div
-
-                                        className="h-4 rounded bg-green-500"
-
-                                        style={{
-
-                                            width:
-
-                                            `${location.suitability_score}%`
-
-                                        }}
-
-                                    />
-
-
-                                </div>
-
-
-                            </div>
-
-
-                        )
-
-                    )
-
-                }
-
-
-            </div>
-
-
-        </div>
-
-    );
-
+                  <div
+                    className={`h-full rounded-full transition-all ${getStatusColor(
+                      score
+                    )}`}
+                    style={{
+                      width: `${Math.max(
+                        0,
+                        Math.min(score, 100)
+                      )}%`,
+                    }}
+                  />
+
+                </div>
+
+                {/* ASSESSMENT */}
+                <div className="mt-2 flex justify-end">
+
+                  <span
+                    className={`text-xs font-semibold ${getStatusTextColor(
+                      score
+                    )}`}
+                  >
+                    {assessment}
+                  </span>
+
+                </div>
+
+              </div>
+            );
+          }
+        )}
+
+      </div>
+
+    </div>
+  );
 }

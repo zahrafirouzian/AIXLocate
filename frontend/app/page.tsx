@@ -476,15 +476,6 @@ export default function Home() {
               {/* AI REPORT */}
               <section>
 
-                <div className="mb-5">
-
-                  <h3 className="text-lg font-bold">
-                    AI Analysis
-                  </h3>
-
-                </div>
-
-
                 <ReportCard
                   report={
                     result.analysis?.report ??
