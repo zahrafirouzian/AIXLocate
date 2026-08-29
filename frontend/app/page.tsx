@@ -152,8 +152,8 @@ export default function Home() {
             </h2>
 
             <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-500">
-              Analyze environmental conditions and discover the
-              most suitable location for AI data center deployment.
+              Analyze climate intelligence to select the best
+              AI data center location.
             </p>
 
           </div>
@@ -166,10 +166,6 @@ export default function Home() {
               <h3 className="text-lg font-semibold">
                 Analyze a Location
               </h3>
-
-              <p className="mt-1 text-sm text-gray-500">
-                Enter a U.S. city to start the climate analysis.
-              </p>
             </div>
 
 
@@ -177,7 +173,7 @@ export default function Home() {
 
               <div className="flex-1">
 
-                <label className="mb-2 block text-sm font-medium text-gray-700">
+                <label className="mb-2 block text-sm font-bold text-gray-700">
                   City
                 </label>
 
@@ -215,6 +211,7 @@ export default function Home() {
             {/* ERROR */}
             {error && (
               <div className="mt-5 rounded-xl border border-red-200 bg-red-50 p-4">
+
                 <p className="text-sm font-semibold text-red-700">
                   ⚠️ Analysis Error
                 </p>
@@ -222,6 +219,7 @@ export default function Home() {
                 <p className="mt-1 text-sm text-red-600">
                   {error}
                 </p>
+
               </div>
             )}
 
@@ -233,14 +231,17 @@ export default function Home() {
             <section className="mt-6 rounded-2xl border border-blue-100 bg-blue-50 p-6">
 
               <div className="flex items-center gap-3">
+
                 <div className="h-3 w-3 animate-pulse rounded-full bg-blue-500" />
 
                 <p className="text-sm font-medium text-blue-900">
                   AI is analyzing climate conditions...
                 </p>
+
               </div>
 
               <div className="mt-4 grid gap-2 text-xs text-blue-700 sm:grid-cols-3">
+
                 <span>
                   🌎 Querying climate data
                 </span>
@@ -252,6 +253,7 @@ export default function Home() {
                 <span>
                   🤖 Generating AI recommendation
                 </span>
+
               </div>
 
             </section>
@@ -328,9 +330,11 @@ export default function Home() {
               <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
 
                 <div className="border-b border-gray-100 px-6 py-4">
+
                   <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
                     Recommended Location
                   </p>
+
                 </div>
 
 
@@ -477,10 +481,6 @@ export default function Home() {
                   <h3 className="text-lg font-bold">
                     AI Analysis
                   </h3>
-
-                  <p className="mt-1 text-sm text-gray-500">
-                    AI-generated climate intelligence report
-                  </p>
 
                 </div>
 

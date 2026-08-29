@@ -1,136 +1,626 @@
 from app.models.state import ResearchState
-
 from app.services.llm import ask_llm
 
 
 def report_node(state: ResearchState):
 
-    location = state["recommendation"]
+    # ==================================================
+    # SOURCE DATA
+    # ==================================================
 
+    location = state["recommendation"]
     locations = state["locations"]
 
+    if not locations:
+        raise ValueError("No locations available for report generation.")
+
+    # --------------------------------------------------
+    # Find recommended location
+    # --------------------------------------------------
+
     best_location_data = next(
-        loc for loc in locations
-        if loc["name"] == location
+        (
+            loc
+            for loc in locations
+            if loc.get("name") == location
+        ),
+        None,
     )
 
-    prompt = f"""
-You are an AI data center analysis report generator.
+    if best_location_data is None:
+        raise ValueError(
+            f"Recommended location '{location}' was not found "
+            "in the evaluated locations."
+        )
 
-The scoring system has already selected the recommended location.
-Your job is ONLY to explain why this location ranked highest among
-the evaluated candidates.
+    # ==================================================
+    # AUTHORITATIVE SCORE
+    #
+    # The scoring engine is the ONLY source of truth.
+    # The LLM is never allowed to calculate or modify it.
+    # ==================================================
+
+    try:
+        score = float(
+            best_location_data["suitability_score"]
+        )
+    except (KeyError, TypeError, ValueError):
+        raise ValueError(
+            f"Invalid suitability score for '{location}'."
+        )
+
+    score_text = f"{score:.2f}"
+
+    # ==================================================
+    # AUTHORITATIVE RANKING
+    #
+    # Ranking is calculated by the application,
+    # never by the LLM.
+    # ==================================================
+
+    sorted_locations = sorted(
+        locations,
+        key=lambda loc: float(
+            loc.get("suitability_score", 0)
+        ),
+        reverse=True,
+    )
+
+    ranking = next(
+        (
+            index + 1
+            for index, loc in enumerate(sorted_locations)
+            if loc.get("name") == location
+        ),
+        None,
+    )
+
+    if ranking is None:
+        raise ValueError(
+            f"Unable to determine ranking for '{location}'."
+        )
+
+    # ==================================================
+    # SECOND-RANKED LOCATION
+    # ==================================================
+
+    second_location = None
+    second_score = None
+    score_difference = None
+
+    if ranking > 1:
+        # If recommendation is not first, compare against
+        # the location immediately above it.
+        second_location = sorted_locations[ranking - 2]
+
+    elif len(sorted_locations) > 1:
+        # Recommended location is first.
+        second_location = sorted_locations[1]
+
+    if second_location is not None:
+
+        try:
+            second_score = float(
+                second_location.get(
+                    "suitability_score",
+                    0
+                )
+            )
+
+            score_difference = round(
+                abs(score - second_score),
+                2
+            )
+
+        except (TypeError, ValueError):
+            second_score = None
+            score_difference = None
+
+    # ==================================================
+    # LOCKED METRICS
+    # ==================================================
+
+    temperature = best_location_data.get(
+        "temperature"
+    )
+
+    cooling_score = best_location_data.get(
+        "cooling_score"
+    )
+
+    thermal_score = best_location_data.get(
+        "thermal_score"
+    )
+
+    solar_ghi = best_location_data.get(
+        "solar_ghi"
+    )
+
+    solar_dni = best_location_data.get(
+        "solar_dni"
+    )
+
+    # ==================================================
+    # RANKING DATA FOR LLM
+    #
+    # Only expose the information needed for writing.
+    # ==================================================
+
+    ranking_data = [
+        {
+            "rank": index + 1,
+            "location": loc.get("name"),
+            "suitability_score": (
+                f"{float(loc.get('suitability_score', 0)):.2f}"
+            ),
+        }
+        for index, loc in enumerate(sorted_locations)
+    ]
+
+    # ==================================================
+    # AI REPORT PROMPT
+    # ==================================================
+
+    prompt = f"""
+You are the REPORT WRITER inside AIXLocate.
+
+You are NOT the decision maker.
+
+The application has already completed the climate
+analysis, scoring, recommendation, and ranking.
+
+Your ONLY task is to convert the supplied AUTHORITATIVE
+FACTS into ONE short, professional, factual paragraph.
+
+The application values below are immutable.
+
+==================================================
+AUTHORITATIVE DECISION
+==================================================
 
 Recommended Location:
 {location}
 
-Selected Location Data:
-{best_location_data}
-
-All Locations:
-{locations}
-
-
-STRICT RULES:
-
-- Do not change the recommendation.
-- Do not suggest alternatives.
-- Use only the provided numbers.
-- When comparing scores, include the compared values.
-- Do not use human-comfort terminology.
-- Do not use the words:
-  comfort, discomfort, safety, ideal weather, pleasant, unpleasant.
-- Do not describe thermal score as thermal comfort.
-- Describe thermal score only as a technical infrastructure metric.
-- Describe cooling score only as cooling efficiency or estimated cooling performance.
-- Treat risk_score only as a numerical infrastructure/environmental score.
-- Do not describe risk_score as danger, risk level, or safety.
-- Do not invent standards, thresholds, measurements, costs, savings,
-  reliability, or other data.
-- Do not introduce metrics that are not provided.
-- Do not describe the climate as good or bad.
-- Use technical data-center infrastructure language only.
-
-
-IMPORTANT LANGUAGE RULES:
-
-- The recommendation is comparative, not absolute.
-- The selected location is the strongest candidate ONLY among the
-  evaluated locations.
-- Do not claim that it is the objectively best location.
-- Do not claim that it is the ideal location.
-- Do not use exaggerated language.
-- Do not use words such as:
-  ideal, perfect, optimal, best possible, guaranteed,
-  excellent choice, superior location.
-- Do not imply certainty beyond the provided data.
-- Do not claim guaranteed energy savings, cost savings, reliability,
-  performance improvements, or operational benefits.
-- If the score difference between candidates is small, explicitly state
-  that the ranking is close.
-- Describe advantages as relative advantages compared with the evaluated
-  candidates.
-- Clearly distinguish between "highest-ranked candidate" and
-  "objectively best location".
-
-
-PREFERRED WORDING:
-
-Use phrases such as:
-
-- "performed best among the evaluated candidates"
-- "ranked highest in this analysis"
-- "achieved the highest suitability score"
-- "showed comparatively stronger cooling performance"
-- "showed a higher technical infrastructure score"
-- "is the strongest candidate among the evaluated locations"
-- "based on the analyzed data"
-
-
-AVOID:
-
-- "ideal location"
-- "perfect location"
-- "optimal location"
-- "best possible location"
-- "guaranteed to perform better"
-- "will reduce costs"
-- "will save energy"
-
-
-REPORT FORMAT:
-
-Recommended Location:
-<name>
-
-
 Suitability Score:
-<number>/100
+{score_text}/100
 
+Rank:
+{ranking}
 
-Why Selected:
-Explain why this location ranked highest among the evaluated candidates.
-Use the actual metrics and compare them with relevant competing locations.
-If the score difference is small, explicitly mention that the ranking is close.
+Evaluated Locations:
+{len(locations)}
 
+==================================================
+AUTHORITATIVE RANKING
+==================================================
 
-Key Advantages:
-- Compare cooling performance using actual values.
-- Compare thermal performance using actual values.
-- Mention the suitability score and relevant comparison.
+{ranking_data}
 
+==================================================
+SELECTED LOCATION METRICS
+==================================================
 
-Conclusion:
-Write ONE sentence stating that this location is the strongest candidate
-among the evaluated locations based on the analyzed climate and
-environmental data.
+Temperature:
+{temperature}
 
-The conclusion must NOT describe the location as ideal, optimal,
-perfect, objectively best, or guaranteed to perform better.
+Cooling Score:
+{cooling_score}
+
+Thermal Score:
+{thermal_score}
+
+Solar GHI:
+{solar_ghi}
+
+Solar DNI:
+{solar_dni}
+
+==================================================
+COMPARISON LOCATION
+==================================================
+
+Location:
+{second_location.get("name") if second_location else "N/A"}
+
+Score:
+{f"{second_score:.2f}" if second_score is not None else "N/A"}
+
+Score Difference:
+{f"{score_difference:.2f}" if score_difference is not None else "N/A"}
+
+==================================================
+NON-NEGOTIABLE DATA INTEGRITY RULES
+==================================================
+
+1. RECOMMENDATION IS LOCKED
+
+The recommended location is exactly:
+
+{location}
+
+You MUST use exactly this location.
+
+Never replace it.
+
+Never recommend another location.
+
+Never suggest an alternative.
+
+Never question the recommendation.
+
+--------------------------------------------------
+
+2. SCORE IS LOCKED
+
+The authoritative score is exactly:
+
+{score_text}/100
+
+You MUST reproduce this exact value.
+
+Never calculate a score.
+
+Never estimate a score.
+
+Never round it differently.
+
+Never output another suitability score.
+
+--------------------------------------------------
+
+3. RANK IS LOCKED
+
+The authoritative rank is:
+
+#{ranking}
+
+Use exactly this rank.
+
+Do not recalculate or reinterpret ranking.
+
+--------------------------------------------------
+
+4. RANKING IS APPLICATION-CONTROLLED
+
+The ranking was produced by sorting the supplied
+suitability scores in descending order.
+
+The LLM MUST NOT create, modify, or infer a ranking.
+
+--------------------------------------------------
+
+5. USE ONLY PROVIDED FACTS
+
+Every factual statement must be directly supported
+by the supplied data.
+
+Do NOT invent facts, causes, explanations,
+benchmarks, thresholds, standards, costs,
+engineering conclusions, business benefits,
+energy savings, infrastructure capabilities,
+or environmental claims.
+
+--------------------------------------------------
+
+6. DO NOT CREATE CAUSAL RELATIONSHIPS
+
+Do NOT use unsupported phrases such as:
+
+"because the temperature is lower"
+
+"therefore cooling costs are lower"
+
+"this improves energy efficiency"
+
+"this reduces operating costs"
+
+"this improves reliability"
+
+"this reduces risk"
+
+unless the exact relationship is explicitly provided
+in the input data.
+
+--------------------------------------------------
+
+7. TEMPERATURE
+
+Temperature may ONLY be reported as a numerical
+observed metric.
+
+Do NOT describe temperature as:
+
+good
+bad
+favorable
+unfavorable
+ideal
+extreme
+comfortable
+uncomfortable
+
+--------------------------------------------------
+
+8. COOLING SCORE
+
+If mentioned, call it ONLY:
+
+"cooling efficiency"
+
+Do NOT call it:
+
+cooling performance
+energy efficiency
+cooling cost
+cooling savings
+optimal cooling
+excellent cooling
+
+--------------------------------------------------
+
+9. THERMAL SCORE
+
+If mentioned, call it ONLY:
+
+"technical infrastructure metric"
+
+Do NOT call it:
+
+thermal stability
+thermal performance
+infrastructure quality
+superior infrastructure
+excellent infrastructure
+
+--------------------------------------------------
+
+10. SOLAR METRICS
+
+Solar GHI and Solar DNI may ONLY be reported
+as numerical values.
+
+Do NOT infer:
+
+energy generation
+renewable energy availability
+energy savings
+sustainability
+cost reduction
+
+--------------------------------------------------
+
+11. NO INTERPRETATION OF SCORE MAGNITUDE
+
+Do NOT label the overall suitability score as:
+
+Low
+Moderate
+High
+Poor
+Good
+Excellent
+
+unless such a label is explicitly supplied
+as authoritative input.
+
+The score must be reported only as:
+
+{score_text}/100
+
+--------------------------------------------------
+
+12. METRIC COMPARISONS
+
+Do NOT claim that an individual metric is:
+
+best
+highest
+strongest
+superior
+excellent
+optimal
+
+unless that comparison is explicitly confirmed
+by the supplied ranking/data.
+
+--------------------------------------------------
+
+13. FORBIDDEN CLAIMS
+
+Do NOT claim:
+
+safety
+danger
+risk level
+cost reduction
+energy savings
+sustainability
+reliability
+resilience
+operational benefit
+financial benefit
+engineering superiority
+infrastructure superiority
+
+--------------------------------------------------
+
+14. FORBIDDEN LANGUAGE
+
+Do NOT use:
+
+excellent
+optimal
+ideal
+perfect
+superior
+best climate
+good climate
+bad climate
+favorable climate
+unfavorable climate
+comfortable
+comfort
+discomfort
+safe
+unsafe
+danger
+dangerous
+minimal risk
+low risk
+high risk
+energy saving
+energy savings
+lower cost
+cost reduction
+sustainable
+sustainability
+efficient infrastructure
+superior infrastructure
+excellent infrastructure
+optimal cooling
+optimal performance
+thermal stability
+thermal performance
+
+--------------------------------------------------
+
+15. NO MARKDOWN
+
+The output MUST NOT contain:
+
+headings
+titles
+bullet points
+numbered lists
+bold text
+italic text
+Markdown symbols
+quotation marks
+labels
+
+--------------------------------------------------
+
+16. EXACTLY ONE PARAGRAPH
+
+Return exactly ONE paragraph.
+
+No headings.
+
+No line breaks.
+
+No sections.
+
+--------------------------------------------------
+
+17. LENGTH
+
+Write approximately 70–110 words.
+
+Be concise.
+
+Do not repeat information unnecessarily.
+
+--------------------------------------------------
+
+18. REQUIRED CONTENT
+
+The paragraph MUST contain:
+
+A. The recommended location:
+{location}
+
+B. The exact score:
+{score_text}/100
+
+C. The fact that it ranked first among the evaluated
+candidates ONLY if the authoritative rank is #1.
+
+D. At least one numerical metric from the selected
+location.
+
+E. A statement that the recommendation is based on
+the AIXLocate scoring system.
+
+F. A final sentence stating that the location ranked
+first based on the provided scoring metrics.
+
+--------------------------------------------------
+
+19. RANK #1 REQUIREMENT
+
+The current authoritative rank is:
+
+#{ranking}
+
+Therefore, ONLY if rank == 1, the report may say:
+
+"{location} ranked first among the evaluated candidates."
+
+If rank is not 1, do NOT claim that it ranked first.
+
+--------------------------------------------------
+
+20. FINAL SENTENCE
+
+If the authoritative rank is #1, the final sentence
+MUST communicate exactly this meaning:
+
+"{location} ranked first among the evaluated candidates based on the provided scoring metrics."
+
+Do not add a new claim to the final sentence.
+
+--------------------------------------------------
+
+FINAL INSTRUCTION
+
+Generate ONLY the final one-paragraph report.
+
+Do not explain your reasoning.
+
+Do not mention these instructions.
+
+Do not mention the prompt.
+
+Do not mention that you are an AI.
+
+Return exactly ONE factual paragraph.
 """
 
-    report = ask_llm(prompt)
+    # ==================================================
+    # CALL AI WRITER
+    # ==================================================
+
+    report_text = ask_llm(prompt)
+
+    # ==================================================
+    # BASIC OUTPUT CLEANUP
+    # ==================================================
+
+    report_text = report_text.strip()
+
+    # Remove Markdown emphasis
+    report_text = report_text.replace("**", "")
+    report_text = report_text.replace("__", "")
+
+    # Remove accidental headings / bullets
+    report_text = report_text.replace("#", "")
+    report_text = report_text.replace("- ", "")
+
+    # Collapse line breaks into one paragraph
+    report_text = " ".join(
+        line.strip()
+        for line in report_text.splitlines()
+        if line.strip()
+    )
+
+    # ==================================================
+    # AUTHORITATIVE SCORE PROTECTION
+    #
+    # The score returned to the application ALWAYS comes
+    # directly from the scoring engine.
+    # ==================================================
 
     return {
-        "report": report
+        "report": report_text,
+        "report_score": score,
     }
