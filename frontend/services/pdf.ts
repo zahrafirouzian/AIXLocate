@@ -512,6 +512,7 @@ export function exportReport(result: any) {
         ),
         "Climate condition",
       ],
+
       [
         "Cooling Score",
         metricValue(
@@ -519,6 +520,7 @@ export function exportReport(result: any) {
         ),
         "Cooling suitability",
       ],
+
       [
         "Thermal Score",
         metricValue(
@@ -526,6 +528,7 @@ export function exportReport(result: any) {
         ),
         "Thermal infrastructure metric",
       ],
+
       [
         "Solar GHI",
         metricValue(
@@ -533,6 +536,7 @@ export function exportReport(result: any) {
         ),
         "Solar resource indicator",
       ],
+
       [
         "Solar DNI",
         metricValue(
@@ -564,10 +568,12 @@ export function exportReport(result: any) {
       0: {
         cellWidth: 48,
       },
+
       1: {
         cellWidth: 35,
         halign: "center",
       },
+
       2: {
         cellWidth: 87,
       },
@@ -599,7 +605,6 @@ export function exportReport(result: any) {
   const rankingRows =
     sortedLocations.map(
       (location, index) => {
-
         const locationScore =
           Number(
             location.suitability_score ??
@@ -609,9 +614,8 @@ export function exportReport(result: any) {
         // =================================================
         // ASSESSMENT LEVELS
         //
-        // 0–39.99   -> Low
-        // 40–59.99  -> Moderate
-        // 60–79.99  -> Good
+        // 0–59.99   -> Low
+        // 60–79.99  -> Moderate
         // 80–100    -> High
         // =================================================
 
@@ -620,8 +624,6 @@ export function exportReport(result: any) {
         if (locationScore >= 80) {
           assessment = "High";
         } else if (locationScore >= 60) {
-          assessment = "Good";
-        } else if (locationScore >= 40) {
           assessment = "Moderate";
         }
 
@@ -794,7 +796,6 @@ export function exportReport(result: any) {
 
   sortedLocations.forEach(
     (location) => {
-
       if (y > 235) {
         doc.addPage();
 
@@ -836,24 +837,28 @@ export function exportReport(result: any) {
               " °C"
             ),
           ],
+
           [
             "Cooling Score",
             metricValue(
               location.cooling_score
             ),
           ],
+
           [
             "Thermal Score",
             metricValue(
               location.thermal_score
             ),
           ],
+
           [
             "Solar GHI",
             metricValue(
               location.solar_ghi
             ),
           ],
+
           [
             "Solar DNI",
             metricValue(
@@ -956,14 +961,17 @@ export function exportReport(result: any) {
         "Cooling Conditions",
         "Assess suitability of local climate for cooling requirements.",
       ],
+
       [
         "Thermal Infrastructure",
         "Represent the temperature-based technical infrastructure metric.",
       ],
+
       [
         "Solar / Environmental Load",
         "Provide a relative environmental metric based on solar GHI.",
       ],
+
       [
         "Overall Suitability",
         "Combine the scoring factors into a comparative location score.",
@@ -1026,7 +1034,6 @@ export function exportReport(result: any) {
 
   paragraphs.forEach(
     (paragraph: string) => {
-
       if (y > 255) {
         doc.addPage();
 
