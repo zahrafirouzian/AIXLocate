@@ -131,13 +131,6 @@ export default function Home() {
           </nav>
 
           <div className="mt-10 rounded-2xl bg-gray-50 p-4">
-            <p className="text-xs font-semibold text-gray-700">
-              AIXLocate
-            </p>
-
-            <p className="mt-2 text-xs leading-5 text-gray-500">
-              Climate-aware intelligence for AI infrastructure.
-            </p>
           </div>
 
         </aside>

@@ -1,11 +1,7 @@
-from datetime import datetime
-
 from app.tools.fortyguard_client import FortyGuardClient
 
 
-
 client = FortyGuardClient()
-
 
 
 def get_environmental_data(
@@ -13,10 +9,6 @@ def get_environmental_data(
     lon,
     temperature
 ):
-
-
-    now = datetime.now()
-
 
     payload = {
 
@@ -28,9 +20,9 @@ def get_environmental_data(
 
         "date_time": {
 
-            "start_date": now.strftime("%Y-%m-%d"),
+            "start_date": "2024-07-15",
 
-            "start_time": now.strftime("%H:%M"),
+            "start_time": "14:00",
 
             "filter_type": 1
 
@@ -38,21 +30,15 @@ def get_environmental_data(
 
     }
 
-
-
     response = client.submit_task(
         "/env_params",
         payload
     )
 
-
     activity_id = response["data"]["activity_id"]
-
-
 
     result = client.wait_for_result(
         activity_id
     )
-
 
     return result

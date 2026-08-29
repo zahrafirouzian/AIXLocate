@@ -1,22 +1,52 @@
 def calculate_cooling_score(temperature):
 
-    score = 100 - abs(temperature - 25) * 4
+    # Ideal operating temperature for
+    # data-center cooling efficiency.
+    ideal_temperature = 22
 
-    return max(0, min(score, 100))
+    score = 100 - abs(
+        temperature - ideal_temperature
+    ) * 4
+
+    return max(
+        0,
+        min(score, 100)
+    )
 
 
 def calculate_thermal_score(temperature):
 
-    score = 100 - abs(temperature - 25) * 3
+    # Thermal suitability around the
+    # preferred operating temperature.
+    ideal_temperature = 22
 
-    return max(0, min(score, 100))
+    score = 100 - abs(
+        temperature - ideal_temperature
+    ) * 3
+
+    return max(
+        0,
+        min(score, 100)
+    )
 
 
 def calculate_risk_score(solar_ghi):
 
-    score = 100 - (solar_ghi / 20)
+    # Higher solar irradiance can indicate
+    # higher heat/cooling burden.
+    #
+    # GHI is approximately in W/m².
+    # Scaling by 20 keeps the score in
+    # a useful 0-100 range.
 
-    return max(0, min(score, 100))
+    score = 100 - (
+        solar_ghi / 20
+    )
+
+    return max(
+        0,
+        min(score, 100)
+    )
 
 
 def calculate_suitability(location):
@@ -27,7 +57,7 @@ def calculate_suitability(location):
 
     climate_score = location.get(
         "climate_score",
-        70
+        0
     )
 
     cooling = calculate_cooling_score(
@@ -57,7 +87,6 @@ def calculate_suitability(location):
     )
 
     return {
-
         **location,
 
         "cooling_score": round(

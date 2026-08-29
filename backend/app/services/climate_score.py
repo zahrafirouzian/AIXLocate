@@ -1,9 +1,18 @@
 def calculate_climate_score(stats_data):
 
-    mean_temp = stats_data.get(
-        "mean",
-        40
+    temperature_stats = stats_data.get(
+        "temperature_stats",
+        {}
     )
+
+    mean_temp = temperature_stats.get(
+        "mean"
+    )
+
+    if mean_temp is None:
+        return 0
+
+    mean_temp = float(mean_temp)
 
     if mean_temp <= 30:
         return 100
@@ -20,4 +29,5 @@ def calculate_climate_score(stats_data):
     elif mean_temp <= 42:
         return 60
 
-    return 50
+    else:
+        return 50
