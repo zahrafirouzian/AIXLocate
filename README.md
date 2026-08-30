@@ -2,11 +2,9 @@
 
 ### AI + eXplore + Locate
 
-**AI eXploration for Intelligent Data Center Site Selection**
+**AI eXploration for Intelligent AI Infrastructure Placement**
 
-> An AI-powered site intelligence platform that evaluates and ranks potential locations for AI infrastructure using climate data, environmental insights, and multi-agent decision-making.
->
-> 
+> An AI-powered climate intelligence platform that evaluates and ranks candidate locations for AI infrastructure using environmental data, geospatial analysis, and multi-agent decision-making.
 
 ---
 
@@ -17,9 +15,9 @@ The rapid growth of Artificial Intelligence is creating massive demand for new d
 However, selecting the wrong location can lead to:
 
 - 💸 Higher cooling and operational costs
-- ⚡ Increased energy consumption
+- ⚡ Higher energy demands
 - 📉 Reduced operational efficiency
-- ⚠️ Greater environmental and infrastructure risks
+- ⚠️ Greater environmental and infrastructure challenges
 
 Traditional site selection processes are often:
 
@@ -33,19 +31,19 @@ As AI infrastructure becomes more complex, organizations need a smarter way to e
 
 # 💡 The Solution
 
-AIXLocate introduces an **AI-powered location intelligence platform** designed to evaluate and rank potential sites for AI infrastructure.
+AIXLocate introduces an **AI-powered location intelligence platform** designed to evaluate and rank candidate locations for AI infrastructure.
 
 The platform:
 
-1. 🌎 Explores candidate locations
+1. 🌎 Analyzes candidate locations
 2. 📡 Collects environmental and climate intelligence
 3. 🌡️ Evaluates climate suitability
-4. 🏆 Scores potential sites based on multiple factors
+4. 🏆 Scores locations based on climate and environmental factors
 5. 🤖 Generates AI-driven recommendations
 6. 🗺️ Provides interactive location visualization
-7. 📄 Creates detailed analysis reports
+7. 📄 Creates structured analysis reports
 
-AIXLocate enables smarter, data-driven decisions for deploying efficient, resilient, and sustainable AI infrastructure.
+AIXLocate enables smarter, data-driven decisions for AI infrastructure placement through climate intelligence and AI-powered analysis.
 
 ---
 
@@ -53,25 +51,25 @@ AIXLocate enables smarter, data-driven decisions for deploying efficient, resili
 
 FortyGuard provides the environmental intelligence layer behind AIXLocate.
 
-Using the **FortyGuard Temperature API**, AIXLocate analyzes climate-related factors that directly influence AI infrastructure performance.
+Using the **FortyGuard Temperature API**, AIXLocate analyzes climate-related factors relevant to AI infrastructure deployment and cooling considerations.
 
 The platform uses FortyGuard data for:
 
 - 🌡️ Temperature analysis
 - 🌍 Environmental parameter evaluation
-- 📊 Climate suitability scoring
-- 🏗️ Infrastructure recommendations
+- 📊 Climate suitability scoring (AIXLocate scoring layer)
+- 🏗️ AI-driven infrastructure recommendations based on climate insights
 
-FortyGuard transforms raw environmental data into actionable intelligence that helps organizations make better location decisions.
-
+AIXLocate transforms FortyGuard environmental data into actionable climate insights to support data-driven location assessment.
 
 ---
+
 
 # ✨ Features
 
 ## 🌎 Climate Intelligence Analysis
 
-Analyze climate conditions and environmental parameters that influence cooling efficiency and AI infrastructure deployment.
+Analyze climate conditions and environmental parameters relevant to AI infrastructure cooling considerations.
 
 ---
 
@@ -93,9 +91,9 @@ Explore and compare candidate locations through an interactive map interface.
 
 ---
 
-## 📊 Multi-Location Comparison
+## 📊 Location Comparison
 
-Compare multiple deployment candidates and identify the most suitable locations for AI infrastructure.
+Compare candidate areas and identify suitable options for AI infrastructure deployment.
 
 ---
 
@@ -116,15 +114,15 @@ The system consists of:
 - 🤖 LangGraph-based AI agent workflow for analysis and decision-making
 - 🌡️ FortyGuard environmental intelligence layer for climate data
 - 🗺️ Geospatial processing for location-based analysis
-- 🏆 Site scoring and recommendation engine for ranking potential AI infrastructure locations
+- 🏆 Climate suitability scoring and recommendation engine for AI infrastructure locations
 
-The workflow combines environmental data, location intelligence, and multi-agent reasoning to generate data-driven site recommendations.
+The workflow combines environmental data, location intelligence, and multi-agent reasoning to generate data-driven location recommendations.
 
 ---
 
 # 🤖 AI Agent Workflow
 
-The LangGraph-based multi-agent workflow coordinates the complete location analysis and decision-making pipeline:
+The LangGraph-based multi-agent workflow coordinates the location analysis and decision-support pipeline:
 
 1. 🧭 **Planner Agent**
    - Interprets the location analysis request
@@ -133,13 +131,14 @@ The LangGraph-based multi-agent workflow coordinates the complete location analy
 2. 🌡️ **Climate Intelligence Agent**
    - Collects and analyzes climate conditions using FortyGuard environmental data
 
-3. 📊 **Scoring Agent**
+3. 📊 **Scoring Engine**
    - Calculates infrastructure suitability scores based on climate and environmental factors
 
 4. 📄 **Report Generator Agent**
-   - Generates structured site assessment reports with AI-driven insights
-
+   - Generates structured location assessment reports with AI-driven insights
+  
 ---
+
 # 🛠️ Technology Stack
 
 ## 🎨 Frontend
@@ -188,7 +187,7 @@ Agents:
 
 - Planner Agent
 - Climate Intelligence Agent
-- Scoring Agent
+- Scoring Engine
 - Report Generator Agent
 
 Technologies:
@@ -211,14 +210,13 @@ Used capabilities:
 - Environmental Parameters
 - Heatmap Analysis
 - Climate Data Processing
-- Climate Suitability Scoring
-
+- Climate Suitability Scoring (AIXLocate scoring layer)
 
 ---
 
 ## 🗺️ Geospatial Intelligence
 
-Used for location processing, candidate generation, and spatial analysis.
+Used for location processing, boundary analysis, and spatial analysis.
 
 Technologies:
 
@@ -226,7 +224,7 @@ Technologies:
 - Shapely
 - Geocoding Services
 - City Boundary Processing
-- Spatial Candidate Generation
+- Location Area Processing
 - GeoJSON
 
 
@@ -266,10 +264,10 @@ AIXLocate helps organizations make smarter decisions when planning next-generati
 It enables:
 
 - 🚀 Faster and more informed infrastructure planning
-- ❄️ Better evaluation of cooling requirements and climate risks
-- ⚡ More efficient energy and operational decisions
-- 🌍 More sustainable and resilient AI infrastructure deployment
-- 📊 Data-driven site selection before large-scale investment
+- ❄️ Better evaluation of climate conditions affecting cooling considerations
+- ⚡ Better operational planning through climate insights
+- 🌍 More climate-aware AI infrastructure planning
+- 📊 Data-driven location assessment before large-scale investment
 
 ---
 
@@ -283,8 +281,7 @@ Future versions will expand the platform with additional infrastructure intellig
 - ☀️ Renewable energy potential assessment
 - 🌐 Network connectivity analysis
 - 🌪️ Natural hazard and climate risk assessment
-- 🧩 Multi-factor infrastructure optimization
-
+- 🧩 Multi-factor infrastructure suitability optimization
   
 ---
 
