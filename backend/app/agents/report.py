@@ -671,11 +671,24 @@ Return ONLY the final factual paragraph.
             "AI report validation failed: authoritative score is missing."
         )
 
-    if f"#{ranking}" not in report_text and (
-        f"ranked first" not in report_lower
-        if ranking == 1
-        else True
-    ):
+    if ranking == 1:
+        ranking_ok = (
+            f"#{ranking}" in report_text
+            or f"ranked first" in report_lower
+            or "ranked 1" in report_lower
+            or "rank 1" in report_lower
+            or "ranking 1" in report_lower
+            or report_text.startswith("1 ")
+        )
+    else:
+        ranking_ok = (
+            f"#{ranking}" in report_text
+            or f"ranked {ranking}" in report_lower
+            or f"rank {ranking}" in report_lower
+            or f"ranking {ranking}" in report_lower
+        )
+
+    if not ranking_ok:
         raise ValueError(
             "AI report validation failed: authoritative ranking is missing."
         )
