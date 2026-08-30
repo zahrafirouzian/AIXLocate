@@ -4,7 +4,9 @@
 
 **AI eXploration for Intelligent AI Infrastructure Placement**
 
-> An AI-powered climate intelligence platform that evaluates and ranks candidate locations for AI infrastructure using environmental data, geospatial analysis, and multi-agent decision-making.
+> An AI-powered climate intelligence platform that evaluates and ranks
+> candidate locations for AI infrastructure using environmental data,
+> geospatial analysis, and multi-agent decision-making.
 
 ---
 
@@ -63,7 +65,6 @@ The platform uses FortyGuard data for:
 AIXLocate transforms FortyGuard environmental data into actionable climate insights to support data-driven location assessment.
 
 ---
-
 
 # ✨ Features
 
@@ -136,7 +137,7 @@ The LangGraph-based multi-agent workflow coordinates the location analysis and d
 
 4. 📄 **Report Generator Agent**
    - Generates structured location assessment reports with AI-driven insights
-  
+
 ---
 
 # 🛠️ Technology Stack
@@ -157,7 +158,6 @@ Technologies:
 - Leaflet
 - OpenStreetMap
 
-
 ---
 
 ## ⚙️ Backend
@@ -173,7 +173,6 @@ Technologies:
 - Uvicorn
 - Pydantic
 - Requests
-
 
 ---
 
@@ -194,7 +193,6 @@ Technologies:
 
 - LangGraph
 - LangChain
-
 
 ---
 
@@ -227,7 +225,6 @@ Technologies:
 - Location Area Processing
 - GeoJSON
 
-
 ---
 
 ## 🧠 AI Reasoning & Report Generation
@@ -239,7 +236,6 @@ Technologies:
 - Ollama
 - Qwen2.5:1.5B Local LLM
 - Prompt-based AI reasoning
-
 
 ---
 
@@ -282,10 +278,10 @@ Future versions will expand the platform with additional infrastructure intellig
 - 🌐 Network connectivity analysis
 - 🌪️ Natural hazard and climate risk assessment
 - 🧩 Multi-factor infrastructure suitability optimization
-  
+
 ---
 
-👤 Creator
+# 👤 Creator
 
 A solo-built project developed for the FortyGuard Hackathon 2026.
 
